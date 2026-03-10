@@ -1,4 +1,3 @@
-// lib/src/inspector_overlay.dart
 import 'package:flutter/material.dart';
 import 'inspector_store.dart';
 import 'screens/request_list_screen.dart';
@@ -76,30 +75,16 @@ class _HttpInspectorOverlayState extends State<HttpInspectorOverlay>
     }
   }
 
-  void _openInspector() {
-    // Since this might be above MaterialApp, Navigator.of(context) might fail if
-    // not used with MaterialApp.builder.
+  bool _isModalOpen = false;
 
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: 'Inspector',
-      barrierColor: Colors.black54,
-      pageBuilder: (context, anim, __) => Directionality(
-        textDirection: TextDirection.ltr,
-        child: Material(
-          type: MaterialType.transparency,
-          child: const _InspectorModal(),
-        ),
-      ),
-      transitionBuilder: (context, anim, __, child) => SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 1),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
-        child: child,
-      ),
-    );
+  void _openInspector() {
+    setState(() => _isModalOpen = true);
+  }
+
+  void _closeInspector() {
+    setState(() {
+      _isModalOpen = false;
+    });
   }
 
   @override
@@ -112,15 +97,88 @@ class _HttpInspectorOverlayState extends State<HttpInspectorOverlay>
         textDirection: TextDirection.ltr,
         children: [
           widget.child,
+          if (_isModalOpen) ...[
+            // Barrier
+            GestureDetector(
+              onTap: _closeInspector,
+              child: Container(color: Colors.black54),
+            ),
+            // Modal Content
+            _InspectorInternalModal(
+              onClose: _closeInspector,
+            ),
+          ],
           _OverlayPositioned(
             initialOffset: _offset,
             onOffsetChanged: (newOffset) => setState(() => _offset = newOffset),
-            onTap: _openInspector,
+            onTap: _isModalOpen ? _closeInspector : _openInspector,
             pulseAnimation: _pulseAnimation,
             store: _store,
             buttonColor: widget.buttonColor,
+            isModalOpen: _isModalOpen,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _InspectorInternalModal extends StatelessWidget {
+  final VoidCallback onClose;
+
+  const _InspectorInternalModal({
+    required this.onClose,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.maybeOf(context)?.size ?? const Size(1000, 2000);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Container(
+        height: size.height * 0.88,
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF5F5F5),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          child: Column(
+            children: [
+              // Handle
+              GestureDetector(
+                onVerticalDragUpdate: (details) {
+                  if (details.delta.dy > 10) onClose();
+                },
+                child: Container(
+                  color: Colors.transparent, // Padding for better drag target
+                  width: double.infinity,
+                  padding: const EdgeInsets.only(top: 8, bottom: 4),
+                  child: Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade600,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: MaterialApp(
+                  debugShowCheckedModeBanner: false,
+                  theme: Theme.of(context),
+                  darkTheme: ThemeData.dark(),
+                  home: const RequestListScreen(),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -133,6 +191,7 @@ class _OverlayPositioned extends StatefulWidget {
   final Animation<double> pulseAnimation;
   final InspectorStore store;
   final Color? buttonColor;
+  final bool isModalOpen;
 
   const _OverlayPositioned({
     required this.initialOffset,
@@ -141,6 +200,7 @@ class _OverlayPositioned extends StatefulWidget {
     required this.pulseAnimation,
     required this.store,
     this.buttonColor,
+    required this.isModalOpen,
   });
 
   @override
@@ -188,6 +248,7 @@ class _OverlayPositionedState extends State<_OverlayPositioned> {
             pendingCount: widget.store.pendingCount,
             isDragging: _isDragging,
             color: widget.buttonColor,
+            isCloseIcon: widget.isModalOpen,
           ),
         ),
       ),
@@ -199,6 +260,7 @@ class _FloatingButton extends StatelessWidget {
   final int errorCount, totalCount, pendingCount;
   final bool isDragging;
   final Color? color;
+  final bool isCloseIcon;
 
   const _FloatingButton({
     required this.errorCount,
@@ -206,18 +268,21 @@ class _FloatingButton extends StatelessWidget {
     required this.pendingCount,
     required this.isDragging,
     this.color,
+    this.isCloseIcon = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final hasErrors = errorCount > 0;
     final isPending = pendingCount > 0;
-    final btnColor = color ??
-        (hasErrors
-            ? Colors.red.shade700
-            : isPending
-                ? Colors.orange.shade700
-                : const Color(0xFF6C63FF));
+    final btnColor = isCloseIcon
+        ? Colors.grey.shade800
+        : (color ??
+            (hasErrors
+                ? Colors.red.shade700
+                : isPending
+                    ? Colors.orange.shade700
+                    : const Color(0xFF6C63FF)));
 
     return Material(
       elevation: isDragging ? 14 : 6,
@@ -240,25 +305,28 @@ class _FloatingButton extends StatelessWidget {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  isPending ? Icons.sync : Icons.network_check,
-                  color: Colors.white,
-                  size: 20,
-                ),
-                Text(
-                  '$totalCount',
-                  style: const TextStyle(
+            if (isCloseIcon)
+              const Icon(Icons.close, color: Colors.white, size: 28)
+            else
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isPending ? Icons.sync : Icons.network_check,
                     color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+                    size: 20,
                   ),
-                ),
-              ],
-            ),
-            if (hasErrors)
+                  Text(
+                    '$totalCount',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            if (hasErrors && !isCloseIcon)
               Positioned(
                 top: 5,
                 right: 5,
@@ -287,40 +355,4 @@ class _FloatingButton extends StatelessWidget {
   }
 }
 
-class _InspectorModal extends StatelessWidget {
-  const _InspectorModal();
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: Container(
-        height: size.height * 0.88,
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF5F5F5),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 8, bottom: 4),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade600,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const Expanded(child: RequestListScreen()),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+// Deleted old _InspectorModal as it is now integrated into _InspectorInternalModal

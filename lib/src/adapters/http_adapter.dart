@@ -57,7 +57,7 @@ class InspectorHttpClient extends http.BaseClient {
       id: id,
       timestamp: DateTime.now(),
       method: request.method.toUpperCase(),
-      url: request.url.toString().split('?').first,
+      url: request.url.toString(),
       requestHeaders: headers,
       requestBody: body,
       queryParameters: request.url.queryParameters,

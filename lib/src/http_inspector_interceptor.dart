@@ -27,13 +27,26 @@ class HttpInspectorInterceptor extends Interceptor {
       headers['Content-Type'] = options.contentType ?? 'application/json';
     }
 
+    dynamic requestBody = options.data;
+    if (requestBody is FormData) {
+      final data = <String, dynamic>{};
+      for (var field in requestBody.fields) {
+        data[field.key] = field.value;
+      }
+      for (var file in requestBody.files) {
+        data[file.key] =
+            '[File: ${file.value.filename}, Size: ${file.value.length} bytes]';
+      }
+      requestBody = data;
+    }
+
     _store.addRecord(HttpRecord(
       id: id,
       timestamp: DateTime.now(),
       method: options.method.toUpperCase(),
-      url: options.uri.toString().split('?').first,
+      url: options.uri.toString(),
       requestHeaders: headers,
-      requestBody: options.data,
+      requestBody: requestBody,
       queryParameters:
           options.queryParameters.map((k, v) => MapEntry(k, v.toString())),
     ));

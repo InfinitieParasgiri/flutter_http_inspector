@@ -4,7 +4,7 @@ description: >
   and lets you copy cURL commands. Supports Dio, http package, and manual logging.
   Works as a floating button overlay in any Flutter app — zero config.
 version: 0.1.0
-homepage: https://github.com/yourusername/flutter_http_inspector
+homepage: https://github.com/InfinitieParasgiri/flutter_http_inspector
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
