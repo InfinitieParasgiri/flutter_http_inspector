@@ -44,7 +44,6 @@ class _HttpInspectorOverlayState extends State<HttpInspectorOverlay>
     with SingleTickerProviderStateMixin {
   final _store = InspectorStore();
   late Offset _offset;
-  bool _isDragging = false;
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
@@ -78,19 +77,27 @@ class _HttpInspectorOverlayState extends State<HttpInspectorOverlay>
   }
 
   void _openInspector() {
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        opaque: false,
-        barrierDismissible: true,
-        barrierColor: Colors.black54,
-        pageBuilder: (_, __, ___) => const _InspectorModal(),
-        transitionsBuilder: (_, anim, __, child) => SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 1),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
-          child: child,
+    // Since this might be above MaterialApp, Navigator.of(context) might fail if
+    // not used with MaterialApp.builder.
+
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Inspector',
+      barrierColor: Colors.black54,
+      pageBuilder: (context, anim, __) => Directionality(
+        textDirection: TextDirection.ltr,
+        child: Material(
+          type: MaterialType.transparency,
+          child: const _InspectorModal(),
         ),
+      ),
+      transitionBuilder: (context, anim, __, child) => SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 1),
+          end: Offset.zero,
+        ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
+        child: child,
       ),
     );
   }
@@ -102,39 +109,88 @@ class _HttpInspectorOverlayState extends State<HttpInspectorOverlay>
     return Directionality(
       textDirection: TextDirection.ltr,
       child: Stack(
-      children: [
-        widget.child,
-        Positioned(
-          left: _offset.dx,
-          top: _offset.dy,
-          child: GestureDetector(
-            onPanStart: (_) => setState(() => _isDragging = true),
-            onPanUpdate: (d) {
-              setState(() {
-                _offset += d.delta;
-                final size = MediaQuery.of(context).size;
-                _offset = Offset(
-                  _offset.dx.clamp(0, size.width - 60),
-                  _offset.dy.clamp(0, size.height - 60),
-                );
-              });
-            },
-            onPanEnd: (_) => setState(() => _isDragging = false),
-            onTap: _isDragging ? null : _openInspector,
-            child: ScaleTransition(
-              scale: _pulseAnimation,
-              child: _FloatingButton(
-                errorCount: _store.errorCount,
-                totalCount: _store.totalCount,
-                pendingCount: _store.pendingCount,
-                isDragging: _isDragging,
-                color: widget.buttonColor,
-              ),
-            ),
+        textDirection: TextDirection.ltr,
+        children: [
+          widget.child,
+          _OverlayPositioned(
+            initialOffset: _offset,
+            onOffsetChanged: (newOffset) => setState(() => _offset = newOffset),
+            onTap: _openInspector,
+            pulseAnimation: _pulseAnimation,
+            store: _store,
+            buttonColor: widget.buttonColor,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OverlayPositioned extends StatefulWidget {
+  final Offset initialOffset;
+  final ValueChanged<Offset> onOffsetChanged;
+  final VoidCallback onTap;
+  final Animation<double> pulseAnimation;
+  final InspectorStore store;
+  final Color? buttonColor;
+
+  const _OverlayPositioned({
+    required this.initialOffset,
+    required this.onOffsetChanged,
+    required this.onTap,
+    required this.pulseAnimation,
+    required this.store,
+    this.buttonColor,
+  });
+
+  @override
+  State<_OverlayPositioned> createState() => _OverlayPositionedState();
+}
+
+class _OverlayPositionedState extends State<_OverlayPositioned> {
+  late Offset _offset;
+  bool _isDragging = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _offset = widget.initialOffset;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Attempt to get size from MediaQuery if available, else use full screen
+    final size = MediaQuery.maybeOf(context)?.size ??
+        const Size(1000, 2000); // Fallback to large size if no context
+
+    return Positioned(
+      left: _offset.dx,
+      top: _offset.dy,
+      child: GestureDetector(
+        onPanStart: (_) => setState(() => _isDragging = true),
+        onPanUpdate: (d) {
+          setState(() {
+            _offset += d.delta;
+            _offset = Offset(
+              _offset.dx.clamp(0, size.width - 60),
+              _offset.dy.clamp(0, size.height - 60),
+            );
+            widget.onOffsetChanged(_offset);
+          });
+        },
+        onPanEnd: (_) => setState(() => _isDragging = false),
+        onTap: _isDragging ? null : widget.onTap,
+        child: ScaleTransition(
+          scale: widget.pulseAnimation,
+          child: _FloatingButton(
+            errorCount: widget.store.errorCount,
+            totalCount: widget.store.totalCount,
+            pendingCount: widget.store.pendingCount,
+            isDragging: _isDragging,
+            color: widget.buttonColor,
           ),
         ),
-      ],
-    ),
+      ),
     );
   }
 }
