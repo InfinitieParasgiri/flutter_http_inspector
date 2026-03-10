@@ -99,7 +99,9 @@ class _HttpInspectorOverlayState extends State<HttpInspectorOverlay>
   Widget build(BuildContext context) {
     if (!widget.enabled) return widget.child;
 
-    return Stack(
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Stack(
       children: [
         widget.child,
         Positioned(
@@ -132,6 +134,7 @@ class _HttpInspectorOverlayState extends State<HttpInspectorOverlay>
           ),
         ),
       ],
+    ),
     );
   }
 }
