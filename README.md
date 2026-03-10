@@ -49,12 +49,37 @@ HttpInspector.setup(dio: dio); // That's it!
 **Standard http package**
 ```dart
 import 'package:http/http.dart' as http;
+import 'package:flutter_http_inspector/flutter_http_inspector.dart';
 
-// Returns an InspectorHttpClient — a drop-in replace for http.Client
+// 1. Setup the client (returns an InspectorHttpClient)
 final client = HttpInspector.setupHttp(http.Client());
 
-// Use 'client' for all your calls
-await client.get(Uri.parse('https://example.com'));
+// 2. Use 'client' exactly like a normal http.Client
+final response = await client.get(Uri.parse('https://example.com/api'));
+```
+
+**Default API / Manual Logging**
+If you use `dart:io HttpClient`, `GraphQL`, or a custom class, you can log requests manually:
+```dart
+import 'package:flutter_http_inspector/flutter_http_inspector.dart';
+
+// 1. Manually start a log entry
+final session = HttpInspector.log(
+  'POST', 
+  'https://api.example.com/login',
+  body: {'user': 'admin'},
+);
+
+try {
+  // ... run your custom API code ...
+  final res = await myHttpClient.post(...)
+  
+  // 2. Complete the log when response arrives
+  session.complete(statusCode: 200, responseBody: res.data);
+} catch (e) {
+  // 3. Or log the error if it fails
+  session.error(e.toString());
+}
 ```
 
 ### Step 2 — Wrap your app
