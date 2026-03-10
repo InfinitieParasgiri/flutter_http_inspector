@@ -50,7 +50,14 @@ class InspectorHttpClient extends http.BaseClient {
     if (request is http.Request) {
       body = request.body.isNotEmpty ? request.body : null;
     } else if (request is http.MultipartRequest) {
-      body = '[Multipart Form Data]';
+      // Parse multipart fields into readable map
+      final data = <String, dynamic>{};
+      request.fields.forEach((k, v) => data[k] = v);
+      for (final file in request.files) {
+        data[file.field] =
+            '[File: ${file.filename ?? file.field}, Size: ${file.length} bytes]';
+      }
+      body = data;
     }
 
     _store.addRecord(HttpRecord(
