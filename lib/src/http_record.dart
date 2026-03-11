@@ -61,15 +61,17 @@ class HttpRecord {
     }
 
     // ── Detect multipart content-type ─────────────────────────────────
-    final contentType = requestHeaders.entries
+    // IMPORTANT: keep original case for boundary extraction — boundary values
+    // are case-sensitive. Only lowercase for the contains() check.
+    final contentTypeRaw = requestHeaders.entries
         .firstWhere(
           (e) => e.key.toLowerCase() == 'content-type',
           orElse: () => const MapEntry('', ''),
         )
         .value
-        .toString()
-        .toLowerCase();
-    final isMultipart = contentType.contains('multipart/form-data');
+        .toString(); // original case — needed for boundary matching
+    final isMultipart =
+        contentTypeRaw.toLowerCase().contains('multipart/form-data');
 
     // ── Headers to skip (internal Dart/HTTP noise) ────────────────────
     const skipHeaders = {
@@ -97,7 +99,7 @@ class HttpRecord {
     // ── Body ──────────────────────────────────────────────────────────
     if (isMultipart) {
       final fields =
-          _parseMultipartFields(requestBody?.toString() ?? '', contentType);
+          _parseMultipartFields(requestBody?.toString() ?? '', contentTypeRaw);
       for (final e in fields.entries) {
         buffer.write(' \\\n  -F "${_esc(e.key)}=${_esc(e.value)}"');
       }
