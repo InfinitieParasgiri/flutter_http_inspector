@@ -28,7 +28,7 @@ void main() {
 
   runApp(
     HttpInspectorOverlay(
-      enabled: kDebugMode,   // ← auto-hides in release builds
+      enabled: kDebugMode, // ← auto-hides in release builds
       child: const MyApp(),
     ),
   );
@@ -49,15 +49,23 @@ class HomeScreen extends StatelessWidget {
 
   // Dio calls
   Future<void> _dioGet() async {
-    try { await dio.get('/posts/1'); } catch (_) {}
+    try {
+      await dio.get('/posts/1');
+    } catch (_) {}
   }
+
   Future<void> _dioPost() async {
-    try { await dio.post('/posts', data: {'title': 'Hello', 'userId': 1}); }
-    catch (_) {}
+    try {
+      await dio.post('/posts', data: {'title': 'Hello', 'userId': 1});
+    } catch (_) {}
   }
+
   Future<void> _dio404() async {
-    try { await dio.get('/not-found-page-404'); } catch (_) {}
+    try {
+      await dio.get('/not-found-page-404');
+    } catch (_) {}
   }
+
   Future<void> _dioTimeout() async {
     try {
       await Dio(BaseOptions(
@@ -73,7 +81,8 @@ class HomeScreen extends StatelessWidget {
     try {
       await client
           .get(Uri.parse('https://jsonplaceholder.typicode.com/users/1'));
-    } catch (_) {} finally {
+    } catch (_) {
+    } finally {
       client.close();
     }
   }
@@ -81,7 +90,8 @@ class HomeScreen extends StatelessWidget {
   // Manual logging calls
   Future<void> _manualSuccess() async {
     final log = HttpInspector.log(
-      'GET', 'https://api.myapp.com/products',
+      'GET',
+      'https://api.myapp.com/products',
       headers: {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9...'},
       queryParameters: {'page': '1', 'limit': '20'},
     );
@@ -95,7 +105,8 @@ class HomeScreen extends StatelessWidget {
 
   Future<void> _manualError() async {
     final log = HttpInspector.log(
-      'POST', 'https://api.myapp.com/login',
+      'POST',
+      'https://api.myapp.com/login',
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'email': 'user@example.com', 'password': '***'}),
     );
@@ -118,7 +129,6 @@ class HomeScreen extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 28),
-
             _Section(
               icon: '🔵',
               title: 'Dio Adapter',
@@ -130,9 +140,7 @@ class HomeScreen extends StatelessWidget {
                 _Btn('Timeout', Colors.deepOrange, _dioTimeout),
               ],
             ),
-
             const SizedBox(height: 20),
-
             _Section(
               icon: '🟢',
               title: 'http Package Adapter',
@@ -141,9 +149,7 @@ class HomeScreen extends StatelessWidget {
                 _Btn('GET /users/1', Colors.green, _httpGet),
               ],
             ),
-
             const SizedBox(height: 20),
-
             _Section(
               icon: '🟡',
               title: 'Manual Adapter',
@@ -177,13 +183,10 @@ class _Section extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('$icon $title',
-            style:
-                const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
         Text(code,
             style: const TextStyle(
-                fontSize: 11,
-                color: Colors.grey,
-                fontFamily: 'monospace')),
+                fontSize: 11, color: Colors.grey, fontFamily: 'monospace')),
         const SizedBox(height: 10),
         Wrap(spacing: 10, runSpacing: 10, children: buttons),
       ],

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'inspector_store.dart';
-import 'io_interceptor.dart';
 import 'screens/request_list_screen.dart';
 
 /// Wrap your root app widget with this to show the floating inspector button.
@@ -52,11 +51,6 @@ class _HttpInspectorOverlayState extends State<HttpInspectorOverlay>
     super.initState();
     _offset = widget.initialOffset;
     _store.addListener(_onStoreChanged);
-
-    // ── Auto-intercept ALL HTTP traffic — no setup needed in the project ──
-    if (widget.enabled) {
-      installHttpOverrides();
-    }
 
     _pulseController = AnimationController(
       vsync: this,

@@ -2,39 +2,58 @@
 import 'adapters/base_adapter.dart';
 import 'adapters/dio_adapter.dart';
 import 'adapters/http_adapter.dart';
+import 'adapters/io_adapter.dart';
 import 'adapters/manual_adapter.dart';
 
 /// Main entry point for flutter_http_inspector.
 ///
-/// Call [setup] once in your main() and the right adapter is chosen
-/// automatically based on what you pass.
+/// ## Zero-config setup (recommended) — works for `http`, `Dio`, `dart:io`
 ///
-/// Then wrap your app with [HttpInspectorOverlay] — done.
+/// ```dart
+/// void main() {
+///   HttpInspector.setup(); // ← ONE line, no other changes needed
+///   runApp(
+///     HttpInspectorOverlay(enabled: kDebugMode, child: MyApp()),
+///   );
+/// }
+/// ```
+///
+/// This patches [dart:io] globally so ALL HTTP traffic is captured
+/// automatically — no changes in any API helper file.
+///
+/// ## Attach to a specific Dio instance
+///
+/// ```dart
+/// HttpInspector.setup(dio: myDio);
+/// ```
 class HttpInspector {
   HttpInspector._();
 
   static BaseInspectorAdapter? _activeAdapter;
 
-  /// Currently active adapter name — e.g. "Dio", "http", "Manual"
-  static String get activeAdapterName =>
-      _activeAdapter?.adapterName ?? 'None';
+  /// Currently active adapter name — e.g. "IO (global)", "Dio", "Manual"
+  static String get activeAdapterName => _activeAdapter?.adapterName ?? 'None';
 
   // ──────────────────────────────────────────────────────────
-  // SETUP — auto-selects adapter from what you pass
+  // SETUP
   // ──────────────────────────────────────────────────────────
 
-  /// Universal setup. Pass what your project uses:
+  /// Universal setup.
+  ///
+  /// **No args** (default) → patches `dart:io` globally via [HttpOverrides].
+  /// Every request in the app — `http` package, `Dio`, raw `dart:io` —
+  /// is captured automatically. No changes needed in API helper files.
+  ///
+  /// **Pass `dio:`** → attaches an interceptor to that specific `Dio` instance
+  /// only. Use this if you want to limit inspection to one Dio client.
   ///
   /// ```dart
-  /// // Dio:
-  /// HttpInspector.setup(dio: myDio);
-  ///
-  /// // Manual (dart:io / GraphQL / custom):
+  /// // Recommended: catch everything
   /// HttpInspector.setup();
-  /// ```
   ///
-  /// For the `http` package, use [setupHttp] instead — it returns
-  /// the wrapped client directly.
+  /// // Dio-only mode
+  /// HttpInspector.setup(dio: myDio);
+  /// ```
   static BaseInspectorAdapter setup({dynamic dio}) {
     late BaseInspectorAdapter adapter;
 
@@ -42,8 +61,9 @@ class HttpInspector {
       adapter = DioAdapter(dio);
       _log('✅ Dio adapter attached');
     } else {
-      adapter = ManualAdapter();
-      _log('✅ Manual adapter active — use HttpInspector.log() per request');
+      // Default: global dart:io override — zero config, catches everything
+      adapter = IoAdapter();
+      _log('✅ IO (global) adapter attached — all HTTP traffic captured');
     }
 
     adapter.attach();
@@ -51,9 +71,10 @@ class HttpInspector {
     return adapter;
   }
 
-  /// Setup for the `http` package.
+  /// **Advanced / legacy** — wraps a specific `http.Client` instance.
   ///
-  /// Returns an [InspectorHttpClient] — a drop-in [http.Client] replacement.
+  /// Prefer [setup] (no args) for zero-config global interception.
+  /// Only use this if you need to inspect a specific client in isolation.
   ///
   /// ```dart
   /// final client = HttpInspector.setupHttp(http.Client());
@@ -68,10 +89,10 @@ class HttpInspector {
   }
 
   // ──────────────────────────────────────────────────────────
-  // MANUAL LOGGING — for dart:io / GraphQL / anything else
+  // MANUAL LOGGING — for GraphQL / custom wrapper / anything else
   // ──────────────────────────────────────────────────────────
 
-  /// Start tracking a request manually.
+  /// Manually track a single request — useful for GraphQL or custom clients.
   ///
   /// ```dart
   /// final log = HttpInspector.log(
@@ -107,7 +128,7 @@ class HttpInspector {
   // CLEANUP
   // ──────────────────────────────────────────────────────────
 
-  /// Detach the adapter. Call this when your app is disposed.
+  /// Detach the active adapter. Call this when your app is disposed.
   static void dispose() {
     _activeAdapter?.detach();
     _activeAdapter = null;

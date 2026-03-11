@@ -15,8 +15,11 @@ export 'src/http_inspector.dart' show HttpInspector;
 // Adapters
 export 'src/adapters/base_adapter.dart' show BaseInspectorAdapter;
 export 'src/adapters/dio_adapter.dart' show DioAdapter;
-export 'src/adapters/http_adapter.dart' show HttpAdapter, InspectorHttpClient, InspectorMultipartRequest;
-export 'src/adapters/manual_adapter.dart' show ManualAdapter, InspectorLogHandle;
+export 'src/adapters/http_adapter.dart'
+    show HttpAdapter, InspectorHttpClient, InspectorMultipartRequest;
+export 'src/adapters/io_adapter.dart' show IoAdapter;
+export 'src/adapters/manual_adapter.dart'
+    show ManualAdapter, InspectorLogHandle;
 
 // Screens (if you want to push them manually)
 export 'src/screens/request_list_screen.dart' show RequestListScreen;
