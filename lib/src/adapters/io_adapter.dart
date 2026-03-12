@@ -8,6 +8,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import '../http_record.dart';
 import '../inspector_store.dart';
 import 'base_adapter.dart';
@@ -289,7 +290,7 @@ class _InspectorIORequest implements HttpClientRequest {
       );
 
       // Return a replay response so the real caller can still read it
-      return _ReplayHttpClientResponse(response, bytes);
+      return _ReplayHttpClientResponse(response, Uint8List.fromList(bytes));
     } catch (e) {
       _store.updateRecord(
         _id,
