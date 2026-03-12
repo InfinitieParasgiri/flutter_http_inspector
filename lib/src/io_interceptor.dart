@@ -1,6 +1,8 @@
 // lib/src/io_interceptor.dart
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'http_record.dart';
 import 'inspector_store.dart';
 
@@ -227,7 +229,7 @@ class _InspectorRequest implements HttpClientRequest {
       );
 
       // Return a replay-able response
-      return _ReplayResponse(response, bytes);
+      return _ReplayResponse(response, Uint8List.fromList(bytes));
     } catch (e) {
       _store.updateRecord(
         _id,
@@ -294,7 +296,7 @@ class _InspectorRequest implements HttpClientRequest {
   Future<void> flush() => _inner.flush();
 
   @override
-  Future abort([Object? exception, StackTrace? stackTrace]) =>
+  void abort([Object? exception, StackTrace? stackTrace]) =>
       _inner.abort(exception, stackTrace);
 
   @override
@@ -437,4 +439,8 @@ class _ReplayResponse extends Stream<List<int>> implements HttpClientResponse {
       _original.transform(streamTransformer);
   @override
   Stream<List<int>> where(bool Function(List<int> event) test) => _original.where(test);
+
+  @override
+  // TODO: implement compressionState
+  HttpClientResponseCompressionState get compressionState => throw UnimplementedError();
 }
