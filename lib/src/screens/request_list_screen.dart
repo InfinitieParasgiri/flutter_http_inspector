@@ -34,7 +34,6 @@ class _RequestListScreenState extends State<RequestListScreen> {
   void _rebuild() => setState(() {});
 
   List<HttpRecord> get _filtered {
-    // Step 1 – status chip filter
     List<HttpRecord> records;
     switch (_filter) {
       case 'errors':
@@ -47,7 +46,6 @@ class _RequestListScreenState extends State<RequestListScreen> {
         records = _store.records;
     }
 
-    // Step 2 – search (stacks on top)
     final q = _searchQuery.trim().toLowerCase();
     if (q.isEmpty) return records;
 
@@ -73,11 +71,11 @@ class _RequestListScreenState extends State<RequestListScreen> {
       appBar: AppBar(
         backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
         elevation: 0,
-        title: const Text('🔍 HTTP Inspector',
+        title: const Text('HTTP Inspector',
             style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           _FilterChip(
-            label: '${_store.errorCount} errors',
+            label: '\${_store.errorCount} errors',
             color: _store.errorCount > 0 ? Colors.red : Colors.grey,
             active: _filter == 'errors',
             onTap: () => setState(
@@ -86,7 +84,7 @@ class _RequestListScreenState extends State<RequestListScreen> {
           const SizedBox(width: 6),
           if (_store.pendingCount > 0)
             _FilterChip(
-              label: '${_store.pendingCount} pending',
+              label: '\${_store.pendingCount} pending',
               color: Colors.orange,
               active: _filter == 'pending',
               onTap: () => setState(
@@ -117,79 +115,64 @@ class _RequestListScreenState extends State<RequestListScreen> {
             ),
           ),
         ],
-        // ── Search bar always visible below the title row ─────────────
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(56),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-                child: TextField(
-                  controller: _searchController,
-                  style: const TextStyle(fontSize: 13),
-                  decoration: InputDecoration(
-                    hintText: 'Search URL, method, status code...',
-                    hintStyle:
-                        TextStyle(fontSize: 13, color: Colors.grey.shade500),
-                    prefixIcon: const Icon(Icons.search, size: 18),
-                    suffixIcon: hasQuery
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, size: 16),
-                            onPressed: () => setState(() {
-                              _searchQuery = '';
-                              _searchController.clear();
-                            }),
-                          )
-                        : null,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                    filled: true,
-                    fillColor: isDark
-                        ? const Color(0xFF2A2A2A)
-                        : Colors.grey.shade100,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
-                        color: isDark
-                            ? Colors.blue.shade400
-                            : Colors.blue.shade300,
-                        width: 1.5,
-                      ),
-                    ),
-                  ),
-                  onChanged: (v) => setState(() => _searchQuery = v),
-                ),
-              ),
-              Divider(
-                  height: 1,
-                  color:
-                      isDark ? Colors.grey.shade800 : Colors.grey.shade200),
-            ],
-          ),
-        ),
       ),
       body: Column(
         children: [
-          // ── Result count strip ──────────────────────────────────────
+          Container(
+            color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+            child: TextField(
+              controller: _searchController,
+              style: const TextStyle(fontSize: 13),
+              decoration: InputDecoration(
+                hintText: 'Search URL, method, status code...',
+                hintStyle:
+                    TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                prefixIcon: const Icon(Icons.search, size: 18),
+                suffixIcon: hasQuery
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 16),
+                        onPressed: () => setState(() {
+                          _searchQuery = '';
+                          _searchController.clear();
+                        }),
+                      )
+                    : null,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                filled: true,
+                fillColor: isDark
+                    ? const Color(0xFF2A2A2A)
+                    : Colors.grey.shade100,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: isDark
+                        ? Colors.blue.shade400
+                        : Colors.blue.shade300,
+                    width: 1.5,
+                  ),
+                ),
+              ),
+              onChanged: (v) => setState(() => _searchQuery = v),
+            ),
+          ),
+          Divider(
+              height: 1,
+              color: isDark ? Colors.grey.shade800 : Colors.grey.shade200),
           if (hasQuery)
             Container(
               width: double.infinity,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
               color: isDark ? const Color(0xFF1A1A1A) : Colors.grey.shade50,
               child: Text(
-                '${records.length} result${records.length == 1 ? '' : 's'}'
-                ' for "$_searchQuery"',
-                style:
-                    TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                '\${records.length} result\${records.length == 1 ? '' : 's'} for "\$_searchQuery"',
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
               ),
             ),
-
-          // ── List / empty state ──────────────────────────────────────
           Expanded(
             child: records.isEmpty
                 ? Center(
@@ -197,19 +180,17 @@ class _RequestListScreenState extends State<RequestListScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          hasQuery
-                              ? Icons.manage_search
-                              : Icons.wifi_off_rounded,
+                          hasQuery ? Icons.manage_search : Icons.wifi_off_rounded,
                           size: 64,
                           color: Colors.grey.shade600,
                         ),
                         const SizedBox(height: 16),
                         Text(
                           hasQuery
-                              ? 'No results for "$_searchQuery"'
+                              ? 'No results for "$_searchQuery"\'
                               : _filter == 'all'
                                   ? 'No requests yet'
-                                  : 'No $_filter requests',
+                                  : 'No \$_filter requests',
                           style: TextStyle(
                               color: Colors.grey.shade500, fontSize: 16),
                         ),
@@ -223,8 +204,7 @@ class _RequestListScreenState extends State<RequestListScreen> {
                           )
                         else if (_filter != 'all')
                           TextButton(
-                            onPressed: () =>
-                                setState(() => _filter = 'all'),
+                            onPressed: () => setState(() => _filter = 'all'),
                             child: const Text('Show all'),
                           ),
                       ],
@@ -233,16 +213,14 @@ class _RequestListScreenState extends State<RequestListScreen> {
                 : ListView.separated(
                     padding: const EdgeInsets.all(8),
                     itemCount: records.length,
-                    separatorBuilder: (_, __) =>
-                        const SizedBox(height: 4),
+                    separatorBuilder: (_, __) => const SizedBox(height: 4),
                     itemBuilder: (context, i) => _RequestTile(
                       record: records[i],
                       searchQuery: _searchQuery,
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) =>
-                              RequestDetailScreen(record: records[i]),
+                          builder: (_) => RequestDetailScreen(record: records[i]),
                         ),
                       ),
                     ),
@@ -253,8 +231,6 @@ class _RequestListScreenState extends State<RequestListScreen> {
     );
   }
 }
-
-// ── Filter chip ──────────────────────────────────────────────────────
 
 class _FilterChip extends StatelessWidget {
   final String label;
@@ -281,15 +257,11 @@ class _FilterChip extends StatelessWidget {
         ),
         child: Text(label,
             style: TextStyle(
-                color: color,
-                fontSize: 11,
-                fontWeight: FontWeight.bold)),
+                color: color, fontSize: 11, fontWeight: FontWeight.bold)),
       ),
     );
   }
 }
-
-// ── Request tile ─────────────────────────────────────────────────────
 
 class _RequestTile extends StatelessWidget {
   final HttpRecord record;
@@ -306,8 +278,7 @@ class _RequestTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final uri = Uri.tryParse(record.url);
-    final path =
-        uri?.path.isEmpty == true ? '/' : (uri?.path ?? record.url);
+    final path = uri?.path.isEmpty == true ? '/' : (uri?.path ?? record.url);
     final host = uri?.host ?? '';
 
     Color borderColor = Colors.transparent;
@@ -361,9 +332,9 @@ class _RequestTile extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
-                          '\u26a0 ${record.errorMessage}',
-                          style: TextStyle(
-                              fontSize: 11, color: Colors.red.shade400),
+                          '\u26a0 \${record.errorMessage}',
+                          style:
+                              TextStyle(fontSize: 11, color: Colors.red.shade400),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -376,7 +347,7 @@ class _RequestTile extends StatelessWidget {
                 children: [
                   if (record.duration != null)
                     Text(
-                      '${record.duration!.inMilliseconds}ms',
+                      '\${record.duration!.inMilliseconds}ms',
                       style: TextStyle(
                         fontSize: 11,
                         color: record.duration!.inMilliseconds > 1000
@@ -396,8 +367,6 @@ class _RequestTile extends StatelessWidget {
     );
   }
 }
-
-// ── Highlight widget ─────────────────────────────────────────────────
 
 class _HighlightText extends StatelessWidget {
   final String text;
@@ -419,9 +388,7 @@ class _HighlightText extends StatelessWidget {
 
     if (q.isEmpty) {
       return Text(text,
-          style: style,
-          maxLines: maxLines,
-          overflow: TextOverflow.ellipsis);
+          style: style, maxLines: maxLines, overflow: TextOverflow.ellipsis);
     }
 
     final lower = text.toLowerCase();
