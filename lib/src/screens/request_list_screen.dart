@@ -75,7 +75,7 @@ class _RequestListScreenState extends State<RequestListScreen> {
             style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           _FilterChip(
-            label: '\${_store.errorCount} errors',
+            label: '${_store.errorCount} errors',
             color: _store.errorCount > 0 ? Colors.red : Colors.grey,
             active: _filter == 'errors',
             onTap: () => setState(
@@ -84,7 +84,7 @@ class _RequestListScreenState extends State<RequestListScreen> {
           const SizedBox(width: 6),
           if (_store.pendingCount > 0)
             _FilterChip(
-              label: '\${_store.pendingCount} pending',
+              label: '${_store.pendingCount} pending',
               color: Colors.orange,
               active: _filter == 'pending',
               onTap: () => setState(
@@ -169,7 +169,7 @@ class _RequestListScreenState extends State<RequestListScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
               color: isDark ? const Color(0xFF1A1A1A) : Colors.grey.shade50,
               child: Text(
-                '\${records.length} result\${records.length == 1 ? '' : 's'} for "\$_searchQuery"',
+                '${records.length} result${records.length == 1 ? '' : 's'} for "$_searchQuery"',
                 style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
               ),
             ),
@@ -187,10 +187,10 @@ class _RequestListScreenState extends State<RequestListScreen> {
                         const SizedBox(height: 16),
                         Text(
                           hasQuery
-                              ? 'No results for "$_searchQuery"\'
+                              ? 'No results for "$_searchQuery"'
                               : _filter == 'all'
                                   ? 'No requests yet'
-                                  : 'No \$_filter requests',
+                                  : 'No $_filter requests',
                           style: TextStyle(
                               color: Colors.grey.shade500, fontSize: 16),
                         ),
@@ -332,7 +332,7 @@ class _RequestTile extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
-                          '\u26a0 \${record.errorMessage}',
+                          '\u26a0 ${record.errorMessage}',
                           style:
                               TextStyle(fontSize: 11, color: Colors.red.shade400),
                           maxLines: 1,
@@ -347,7 +347,7 @@ class _RequestTile extends StatelessWidget {
                 children: [
                   if (record.duration != null)
                     Text(
-                      '\${record.duration!.inMilliseconds}ms',
+                      '${record.duration!.inMilliseconds}ms',
                       style: TextStyle(
                         fontSize: 11,
                         color: record.duration!.inMilliseconds > 1000
